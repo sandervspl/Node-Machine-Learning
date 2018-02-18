@@ -16,7 +16,8 @@
     "dependencies": {
         "express": "^4.16.2",
         "lodash": "^4.17.5",
-        "node-fetch": "^2.0.0"
+        "node-fetch": "^2.0.0",
+        "node-kmeans": "^1.1.8"
     },
     "devDependencies": {
         "babel-cli": "^6.26.0",
