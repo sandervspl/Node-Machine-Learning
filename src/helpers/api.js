@@ -1,8 +1,12 @@
-import fetch from 'node-fetch';
-import { API_HOST } from './secret';
+import nodeFetch from 'node-fetch';
+import _ from 'lodash';
+import { API_HOST, SERVER_HOST } from './secret';
 
 const request = async (options) => {
-    return await fetch(`${API_HOST}/${options.path}`, options)
+    const f = options.server ? nodeFetch : fetch;
+    const h = options.server ? API_HOST : SERVER_HOST;
+
+    return await f(`${h}/${options.path}`, _.omit(options, 'server'))
         .then(response => response.json())
         .catch(err => console.error('Error!', err));
 };

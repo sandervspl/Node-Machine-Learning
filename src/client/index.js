@@ -1,9 +1,10 @@
 import 'regenerator-runtime/runtime';
 import Chart from 'chart.js';
+import * as api from '../helpers/api'
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const clusteringData = await fetch('http://localhost:3000/clustering/training').then(result => result.json());
-    const elbowData = await fetch('http://localhost:3000/clustering/training/elbow').then(result => result.json());
+    const clusteringData = await api.get({ path: 'clustering/training' });
+    const elbowData = await api.get({ path: 'clustering/training/elbow' });
 
     // debug
     window.clusteringData = clusteringData;

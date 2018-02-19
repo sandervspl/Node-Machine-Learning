@@ -1,6 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import * as api from './api';
+import * as api from '../helpers/api';
 import kmeans from 'node-kmeans';
 import randomColor from 'randomcolor';
 import euclidianDistance from 'euclidean-distance';
@@ -8,7 +8,7 @@ import euclidianDistance from 'euclidean-distance';
 let clusterData = [];
 
 export const getData = async () => {
-    return await api.get({ path: '0832970/clustering/training' });
+    return await api.get({ path: '0832970/clustering/training', server: true });
 };
 
 export const clustering = async (data, k = 5) => {
