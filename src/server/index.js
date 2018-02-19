@@ -6,9 +6,17 @@ import randomColor from 'randomcolor';
 import euclidianDistance from 'euclidean-distance';
 
 let clusterData = [];
+let classificationData = {
+    training: [],
+    test: [],
+};
 
-export const getData = async () => {
-    return await api.get({ path: '0832970/clustering/training', server: true });
+export const getClusterData = async () => {
+    return await api.get({ path: 'clustering/training', server: true });
+};
+
+export const getClassificationData = async (type) => {
+    return await api.get({ path: `classification/${type}`, server: true });
 };
 
 export const clustering = async (data, k = 5) => {
@@ -102,6 +110,10 @@ if (process.env.NODE_ENV !== 'test') {
         res.status(200).json(data);
     });
 
+    app.get('/classification/training', async (req, res) => {
+        res.status(200).json(classificationData);
+    });
+
     app.use((req, res) => {
         res.status(404).send('404');
     });
@@ -109,7 +121,13 @@ if (process.env.NODE_ENV !== 'test') {
     // open connection
     app.listen(app.get('port'), async () => {
         console.log(`Server started on port ${app.get('port')}`);
-        clusterData = await getData();
+        clusterData = await getClusterData();
+        classificationData.training = await getClassificationData('training');
+        // classificationData.test = await getClassificationData('test');
+        //
+        // await api.post({ path: 'classification/test', server: true, body: JSON.stringify(classificationData.test) })
+        //     .then(data => console.log('Classification test score:', data));
+
         clusterData = dressData(clusterData);
     });
 }
