@@ -8,22 +8,28 @@
     "scripts": {
         "start": "node dist/index.js",
         "build": "webpack -p --progress --colors --config webpack.config.prod.js",
-        "dev": "nodemon src/index.js --exec babel-node --presets env,stage-0",
+        "dev:server": "nodemon src/server.js --exec babel-node --presets env,stage-0",
+        "dev:client": "webpack-dev-server",
         "test": "clear && jest ./tests/*.test.js --verbose",
         "test:watch": "npm test -- --watch",
         "test:cov": "npm test -- --coverage"
     },
     "dependencies": {
+        "body-parser": "^1.18.2",
+        "chart.js": "^2.7.1",
         "express": "^4.16.2",
         "lodash": "^4.17.5",
         "node-fetch": "^2.0.0",
-        "node-kmeans": "^1.1.8"
+        "node-kmeans": "^1.1.8",
+        "randomcolor": "^0.5.3",
+        "webpack-dev-server": "^2.11.1"
     },
     "devDependencies": {
         "babel-cli": "^6.26.0",
         "babel-loader": "^7.1.2",
         "babel-preset-env": "^1.6.1",
         "babel-preset-stage-0": "^6.24.1",
+        "html-webpack-plugin": "^2.30.1",
         "jest": "^22.2.1",
         "nodemon": "^1.14.12",
         "webpack": "^3.10.0"
