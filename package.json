@@ -8,7 +8,7 @@
     "scripts": {
         "start": "node dist/index.js",
         "build": "webpack -p --progress --colors --config webpack.config.prod.js",
-        "dev:server": "nodemon src/server.js --exec babel-node --presets env,stage-0",
+        "dev:server": "nodemon src/server/index.js --exec babel-node --presets env,stage-0",
         "dev:client": "webpack-dev-server",
         "test": "clear && jest ./tests/*.test.js --verbose",
         "test:watch": "npm test -- --watch",
@@ -17,6 +17,7 @@
     "dependencies": {
         "body-parser": "^1.18.2",
         "chart.js": "^2.7.1",
+        "euclidean-distance": "^1.0.0",
         "express": "^4.16.2",
         "lodash": "^4.17.5",
         "node-fetch": "^2.0.0",

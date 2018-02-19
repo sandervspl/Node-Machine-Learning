@@ -3,9 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <title>Plotting</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        body {
+            padding: 20px;
+            width: 100vh;
+        }
+
+        canvas:not(:last-child) {
+            margin-bottom: 50px;
+        }
+    </style>
 </head>
 <body>
-    <canvas id="chart" width="400" height="500"></canvas>
+    <canvas id="chartClustering" height="400" style="width: 100%"></canvas>
+    <canvas id="chartKmeans" height="400" style="width: 100%"></canvas>
 </body>
 <script src="dist/bundle.js"></script>
 </html>

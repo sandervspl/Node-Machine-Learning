@@ -61,4 +61,4 @@ typings/
 .idea
 
 # files
-src/secret.js
+src/server/secret.js
