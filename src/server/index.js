@@ -104,8 +104,8 @@ export const logisticRegression = async () => {
 
     // train the classifier
     classifier.train({
-        lr: 0.01,
-        epochs: 800,
+        lr: .06,
+        epochs: 3000,
     });
 
     const prediction = classifier.predict(classificationData.test.x);
@@ -117,6 +117,30 @@ export const logisticRegression = async () => {
 
     await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
         .then(res => console.log('Score:', res));
+};
+
+export const decisionTree = async () => {
+    const dt = new ml.DecisionTree({
+        data: classificationData.training.x,
+        result: classificationData.training.y,
+    });
+
+    // build tree
+    dt.build();
+
+    // avoid overfitting
+    dt.prune(1.0);
+
+    // print tree
+    // dt.print();
+
+    console.log('Classify:', dt.classify([1, 0]));
+
+    // root node of tree
+    // const tree = dt.getTree();
+
+    // console.log('True branch of this node', tree.tb);
+    // console.log('False branch of this node', tree.fb);
 };
 
 if (process.env.NODE_ENV !== 'test') {
@@ -161,6 +185,7 @@ if (process.env.NODE_ENV !== 'test') {
         await getClassificationData('test');
 
         await logisticRegression();
+        await decisionTree();
 
         console.log(`Server ready on port ${app.get('port')}`);
     });
