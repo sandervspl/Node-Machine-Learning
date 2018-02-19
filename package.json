@@ -20,6 +20,7 @@
         "euclidean-distance": "^1.0.0",
         "express": "^4.16.2",
         "lodash": "^4.17.5",
+        "machine_learning": "^0.1.1",
         "node-fetch": "^2.0.0",
         "node-kmeans": "^1.1.8",
         "randomcolor": "^0.5.3",

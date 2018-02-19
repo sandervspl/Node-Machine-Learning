@@ -1,9 +1,11 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import * as api from '../helpers/api';
+import _ from 'lodash';
 import kmeans from 'node-kmeans';
-import randomColor from 'randomcolor';
+import ml from 'machine_learning';
 import euclidianDistance from 'euclidean-distance';
+import randomColor from 'randomcolor';
+import * as api from '../helpers/api';
 
 let clusterData = [];
 let classificationData = {
@@ -12,11 +14,13 @@ let classificationData = {
 };
 
 export const getClusterData = async () => {
-    return await api.get({ path: 'clustering/training', server: true });
+    clusterData = await api.get({ path: 'clustering/training', server: true })
+        .then(dressData);
 };
 
 export const getClassificationData = async (type) => {
-    return await api.get({ path: `classification/${type}`, server: true });
+    const data = await api.get({ path: `classification/${type}`, server: true });
+    classificationData[type] = dressClassData(data);
 };
 
 export const clustering = async (data, k = 5) => {
@@ -61,10 +65,14 @@ export const getKMean = async () => {
 };
 
 export const dressData = (array) => {
-    return array.map((obj) => [
-        obj.x[0],
-        obj.x[1],
-    ]);
+    return array.map(({ x }) => [...x]);
+};
+
+export const dressClassData = (array) => {
+    return array.reduce((obj, { x, y }) => ({
+        x: [...obj.x, x],
+        y: [...obj.y, [(!isNaN(y) ? y : null)]],
+    }), { x: [], y: [] });
 };
 
 export const clusteringTraining = async () => {
@@ -80,6 +88,35 @@ export const clusteringTraining = async () => {
                 };
             });
         });
+};
+
+export const logisticRegression = async () => {
+    // initialize logistic regression classifier
+    const classifier = new ml.LogisticRegression({
+        input: classificationData.training.x,
+        label: classificationData.training.y,
+        // lengths of input and label vectors
+        n_in: 2,
+        n_out: 1,
+    });
+
+    classifier.set('log level', 0);
+
+    // train the classifier
+    classifier.train({
+        lr: 0.01,
+        epochs: 800,
+    });
+
+    const prediction = classifier.predict(classificationData.test.x);
+    // console.log(prediction);
+
+    console.log('Entropy:', classifier.getReconstructionCrossEntropy());
+    console.log('W:', classifier.W);
+    console.log('b:', classifier.b);
+
+    await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
+        .then(res => console.log('Score:', res));
 };
 
 if (process.env.NODE_ENV !== 'test') {
@@ -101,7 +138,6 @@ if (process.env.NODE_ENV !== 'test') {
 
     app.get('/clustering/training', async (req, res) => {
         const data = await clusteringTraining();
-        // console.log(JSON.stringify(data, null, 2));
         res.status(200).json(data);
     });
 
@@ -111,7 +147,7 @@ if (process.env.NODE_ENV !== 'test') {
     });
 
     app.get('/classification/training', async (req, res) => {
-        res.status(200).json(classificationData);
+        res.status(200).json(classificationData.training);
     });
 
     app.use((req, res) => {
@@ -120,14 +156,12 @@ if (process.env.NODE_ENV !== 'test') {
 
     // open connection
     app.listen(app.get('port'), async () => {
-        console.log(`Server started on port ${app.get('port')}`);
-        clusterData = await getClusterData();
-        classificationData.training = await getClassificationData('training');
-        // classificationData.test = await getClassificationData('test');
-        //
-        // await api.post({ path: 'classification/test', server: true, body: JSON.stringify(classificationData.test) })
-        //     .then(data => console.log('Classification test score:', data));
+        await getClusterData();
+        await getClassificationData('training');
+        await getClassificationData('test');
 
-        clusterData = dressData(clusterData);
+        await logisticRegression();
+
+        console.log(`Server ready on port ${app.get('port')}`);
     });
 }
