@@ -1,6 +1,6 @@
 import 'regenerator-runtime/runtime';
 import Chart from 'chart.js';
-import * as api from '../helpers/api'
+import * as api from '../helpers/api';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const clusteringData = await api.get({ path: 'clustering/training' });

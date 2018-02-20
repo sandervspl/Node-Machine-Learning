@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import _ from 'lodash';
 import kmeans from 'node-kmeans';
 import ml from 'machine_learning';
-import euclidianDistance from 'euclidean-distance';
+import euclideanDistance from 'euclidean-distance';
 import randomColor from 'randomcolor';
 import * as api from '../helpers/api';
 
@@ -23,7 +23,7 @@ export const getClassificationData = async (type) => {
     classificationData[type] = dressClassData(data);
 };
 
-export const clustering = async (data, k = 5) => {
+export const clustering = async (data, k = 7) => {
     return new Promise((resolve, reject) => kmeans.clusterize(
         data,
         { k },
@@ -39,7 +39,7 @@ export const clustering = async (data, k = 5) => {
 };
 
 export const getKMean = async () => {
-    const maxK = 20;
+    const maxK = 50;
     const color = randomColor();
     const data = {
         backgroundColor: color,
@@ -49,17 +49,38 @@ export const getKMean = async () => {
 
     for (let k = 2; k <= maxK; k += 1) {
         const clusters = await clustering(clusterData, k);
+        // let sse = 0;
+        // let mean = 0;
 
-        const { x, y } = clusters.reduce((obj, _clusterData) => ({
-            x: [...obj.x, _clusterData.centroid[0]],
-            y: [...obj.y, _clusterData.centroid[1]],
-        }), { x: [], y: [] });
+        /*
+            for all points in cluster do
+                sse[i] = Math.pow(xMean - xData, 2) + Math.pow(yMean - yData, 2)
+
+            for all clusters do
+                totalSse = tel alle sse bij elkaar op
+         */
+
+        let totalLength = clusters.reduce((sum, { centroid, cluster }) => {
+            return cluster.reduce((sum2, datapoint) => ({
+                x: sum2.x + Math.abs(centroid[0] + datapoint[0]) ** 2,
+                y: sum2.y + Math.abs(centroid[1] + datapoint[1]) ** 2,
+            }), sum);
+        }, { x: 0, y: 0 });
+
+        const mean = {
+            x: totalLength.x / clusters.length,
+            y: totalLength.y / clusters.length,
+        };
+
+        const sse = mean.x - totalLength.x + mean.y - totalLength.y;
 
         data.points.push({
             x: k,
-            y: euclidianDistance(x, y),
+            y: sse,
         });
     }
+
+    // console.log(sse);
 
     return data;
 };
@@ -69,10 +90,12 @@ export const dressData = (array) => {
 };
 
 export const dressClassData = (array) => {
-    return array.reduce((obj, { x, y }) => ({
-        x: [...obj.x, x],
-        y: [...obj.y, [(!isNaN(y) ? y : null)]],
-    }), { x: [], y: [] });
+    return array.reduce((obj, { x, y }) => {
+        return {
+            x: [...obj.x, x],
+            y: [...obj.y, [(!isNaN(y) ? y : null)]],
+        };
+    }, { x: [], y: [] });
 };
 
 export const clusteringTraining = async () => {
@@ -91,6 +114,9 @@ export const clusteringTraining = async () => {
 };
 
 export const logisticRegression = async () => {
+    console.log('Calculating Logistic Regression...');
+    console.time('Logistic Regression');
+
     // initialize logistic regression classifier
     const classifier = new ml.LogisticRegression({
         input: classificationData.training.x,
@@ -103,23 +129,29 @@ export const logisticRegression = async () => {
     classifier.set('log level', 0);
 
     // train the classifier
+    // TODO: kijk naar deze values
     classifier.train({
-        lr: .06,
-        epochs: 3000,
+        lr: 1.0,
+        epochs: 10000,
     });
 
     const prediction = classifier.predict(classificationData.test.x);
     // console.log(prediction);
+    console.timeEnd('Logistic Regression');
 
-    console.log('Entropy:', classifier.getReconstructionCrossEntropy());
-    console.log('W:', classifier.W);
-    console.log('b:', classifier.b);
+    // console.log(prediction);
+
+    // console.log('Entropy:', classifier.getReconstructionCrossEntropy());
+    // console.log('W:', classifier.W);
+    // console.log('b:', classifier.b);
 
     await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
         .then(res => console.log('Score:', res));
 };
 
 export const decisionTree = async () => {
+    console.log('Creating Decision Tree...');
+    console.time('Decision tree');
     const dt = new ml.DecisionTree({
         data: classificationData.training.x,
         result: classificationData.training.y,
@@ -127,20 +159,19 @@ export const decisionTree = async () => {
 
     // build tree
     dt.build();
+    console.timeEnd('Decision tree');
 
     // avoid overfitting
     dt.prune(1.0);
 
-    // print tree
-    // dt.print();
+    // console.log('Classify:', dt.classify(classificationData.test));
 
-    console.log('Classify:', dt.classify([1, 0]));
+    const prediction = JSON.stringify(dt.predict(classificationData.test), null, 2);
 
-    // root node of tree
-    // const tree = dt.getTree();
+    console.log(prediction);
 
-    // console.log('True branch of this node', tree.tb);
-    // console.log('False branch of this node', tree.fb);
+    await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
+        .then(res => console.log('Score:', res));
 };
 
 if (process.env.NODE_ENV !== 'test') {
@@ -174,6 +205,10 @@ if (process.env.NODE_ENV !== 'test') {
         res.status(200).json(classificationData.training);
     });
 
+    app.get('/classification/training/tree', async (req, res) => {
+        res.status(200).json(classificationData.training);
+    });
+
     app.use((req, res) => {
         res.status(404).send('404');
     });
@@ -181,11 +216,14 @@ if (process.env.NODE_ENV !== 'test') {
     // open connection
     app.listen(app.get('port'), async () => {
         await getClusterData();
+
+        await getKMean();
+
         await getClassificationData('training');
         await getClassificationData('test');
 
-        await logisticRegression();
-        await decisionTree();
+        // await logisticRegression();
+        // await decisionTree();
 
         console.log(`Server ready on port ${app.get('port')}`);
     });
