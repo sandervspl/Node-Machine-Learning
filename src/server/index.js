@@ -42,7 +42,7 @@ export const clustering = async (data, k = 7) => {
     ));
 };
 
-export const getKMean = async () => {
+export const calculateElbowMethod = async () => {
     const maxK = 50;
     const color = randomColor();
     const data = {
@@ -174,7 +174,7 @@ if (process.env.NODE_ENV !== 'test') {
     });
 
     app.get('/clustering/training/elbow', async (req, res) => {
-        const data = await getKMean();
+        const data = await calculateElbowMethod();
         res.status(200).json(data);
     });
 
