@@ -49,38 +49,25 @@ export const getKMean = async () => {
 
     for (let k = 2; k <= maxK; k += 1) {
         const clusters = await clustering(clusterData, k);
-        // let sse = 0;
-        // let mean = 0;
 
-        /*
-            for all points in cluster do
-                sse[i] = Math.pow(xMean - xData, 2) + Math.pow(yMean - yData, 2)
+        // calculate average distance of all datapoints to its centroid for entire cluster
+        const avgDistance = clusters.reduce((sum, { centroid, cluster }) => {
+            // calculate total distance of all datapoints to its centroid
+            const totalDistance = cluster.reduce((sum2, datapoint) => {
+                return sum2 + Math.abs(euclideanDistance(datapoint, centroid)) ** 2;
+            }, 0);
 
-            for all clusters do
-                totalSse = tel alle sse bij elkaar op
-         */
+            return sum + totalDistance / cluster.length;
+        }, 0);
 
-        let totalLength = clusters.reduce((sum, { centroid, cluster }) => {
-            return cluster.reduce((sum2, datapoint) => ({
-                x: sum2.x + Math.abs(centroid[0] + datapoint[0]) ** 2,
-                y: sum2.y + Math.abs(centroid[1] + datapoint[1]) ** 2,
-            }), sum);
-        }, { x: 0, y: 0 });
-
-        const mean = {
-            x: totalLength.x / clusters.length,
-            y: totalLength.y / clusters.length,
-        };
-
-        const sse = mean.x - totalLength.x + mean.y - totalLength.y;
+        // average error per k (groups)
+        const sse = avgDistance / k;
 
         data.points.push({
             x: k,
             y: sse,
         });
     }
-
-    // console.log(sse);
 
     return data;
 };
