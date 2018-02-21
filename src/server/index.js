@@ -3,7 +3,6 @@ import bodyParser from 'body-parser';
 import _ from 'lodash';
 
 import kmeans from 'node-kmeans';
-import ml from 'machine_learning';
 import Matrix from 'ml-matrix';
 import LogisticRegression from 'ml-logistic-regression';
 import { DecisionTreeRegression } from 'ml-cart';
