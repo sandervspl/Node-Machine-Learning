@@ -180,14 +180,6 @@ if (process.env.NODE_ENV !== 'test') {
         res.status(200).json(data);
     });
 
-    app.get('/classification/training', async (req, res) => {
-        res.status(200).json(classificationData.training);
-    });
-
-    app.get('/classification/training/tree', async (req, res) => {
-        res.status(200).json(classificationData.training);
-    });
-
     app.use((req, res) => {
         res.status(404).send('404');
     });
