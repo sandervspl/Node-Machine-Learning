@@ -1,9 +1,13 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import _ from 'lodash';
+
 import kmeans from 'node-kmeans';
 import ml from 'machine_learning';
+import Matrix from 'ml-matrix';
+import LogisticRegression from 'ml-logistic-regression';
 import euclideanDistance from 'euclidean-distance';
+
 import randomColor from 'randomcolor';
 import * as api from '../helpers/api';
 
@@ -80,7 +84,7 @@ export const dressClassData = (array) => {
     return array.reduce((obj, { x, y }) => {
         return {
             x: [...obj.x, x],
-            y: [...obj.y, [(!isNaN(y) ? y : null)]],
+            y: [...obj.y, (!isNaN(y) ? y : null)],
         };
     }, { x: [], y: [] });
 };
@@ -104,33 +108,19 @@ export const logisticRegression = async () => {
     console.log('Calculating Logistic Regression...');
     console.time('Logistic Regression');
 
-    // initialize logistic regression classifier
-    const classifier = new ml.LogisticRegression({
-        input: classificationData.training.x,
-        label: classificationData.training.y,
-        // lengths of input and label vectors
-        n_in: 2,
-        n_out: 1,
+    const x = new Matrix(classificationData.training.x);
+    const y = Matrix.columnVector(classificationData.training.y);
+
+    const xTest = new Matrix(classificationData.test.x);
+
+    const logreg = new LogisticRegression({
+        numSteps: 1000,
+        learningRate: 1,
     });
 
-    classifier.set('log level', 0);
+    logreg.train(x, y);
 
-    // train the classifier
-    // TODO: kijk naar deze values
-    classifier.train({
-        lr: 1.0,
-        epochs: 10000,
-    });
-
-    const prediction = classifier.predict(classificationData.test.x);
-    // console.log(prediction);
-    console.timeEnd('Logistic Regression');
-
-    // console.log(prediction);
-
-    // console.log('Entropy:', classifier.getReconstructionCrossEntropy());
-    // console.log('W:', classifier.W);
-    // console.log('b:', classifier.b);
+    const prediction = logreg.predict(xTest);
 
     await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
         .then(res => console.log('Score:', res));
@@ -204,12 +194,10 @@ if (process.env.NODE_ENV !== 'test') {
     app.listen(app.get('port'), async () => {
         await getClusterData();
 
-        await getKMean();
-
         await getClassificationData('training');
         await getClassificationData('test');
 
-        // await logisticRegression();
+        await logisticRegression();
         // await decisionTree();
 
         console.log(`Server ready on port ${app.get('port')}`);
