@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         options: {
             title: {
                 display: true,
-                text: 'Clusters vs Aggregate Distance',
+                text: 'Clusters vs Aggregate Distance (Elbow Method)',
             },
             scales: {
                 xAxes: [{
