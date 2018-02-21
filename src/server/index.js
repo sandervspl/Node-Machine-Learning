@@ -115,7 +115,9 @@ export const logisticRegression = async () => {
 
     const logreg = new LogisticRegression({
         numSteps: 1000,
-        learningRate: 1,
+        // One way to resolve this problem is to divide the λ with 1/N, where N is the size of the training data.
+        // http://blog.datumbox.com/tuning-the-learning-rate-in-gradient-descent/
+        learningRate: 1 / classificationData.training.x.length,
     });
 
     logreg.train(x, y);
