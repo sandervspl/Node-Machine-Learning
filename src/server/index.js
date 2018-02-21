@@ -6,6 +6,7 @@ import kmeans from 'node-kmeans';
 import ml from 'machine_learning';
 import Matrix from 'ml-matrix';
 import LogisticRegression from 'ml-logistic-regression';
+import { DecisionTreeRegression } from 'ml-cart';
 import euclideanDistance from 'euclidean-distance';
 
 import randomColor from 'randomcolor';
@@ -122,6 +123,8 @@ export const logisticRegression = async () => {
 
     const prediction = logreg.predict(xTest);
 
+    console.timeEnd('Logistic Regression');
+
     await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
         .then(res => console.log('Score:', res));
 };
@@ -129,23 +132,13 @@ export const logisticRegression = async () => {
 export const decisionTree = async () => {
     console.log('Creating Decision Tree...');
     console.time('Decision tree');
-    const dt = new ml.DecisionTree({
-        data: classificationData.training.x,
-        result: classificationData.training.y,
-    });
 
-    // build tree
-    dt.build();
+    const dt = new DecisionTreeRegression();
+    dt.train(classificationData.training.x, classificationData.training.y);
+
+    const prediction = dt.predict(classificationData.test.x);
+
     console.timeEnd('Decision tree');
-
-    // avoid overfitting
-    dt.prune(1.0);
-
-    // console.log('Classify:', dt.classify(classificationData.test));
-
-    const prediction = JSON.stringify(dt.predict(classificationData.test), null, 2);
-
-    console.log(prediction);
 
     await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
         .then(res => console.log('Score:', res));
@@ -198,7 +191,7 @@ if (process.env.NODE_ENV !== 'test') {
         await getClassificationData('test');
 
         await logisticRegression();
-        // await decisionTree();
+        await decisionTree();
 
         console.log(`Server ready on port ${app.get('port')}`);
     });
