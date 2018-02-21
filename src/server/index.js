@@ -2,11 +2,10 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import _ from 'lodash';
 
-import kmeans from 'node-kmeans';
+import kmeans from 'ml-kmeans';
 import Matrix from 'ml-matrix';
 import LogisticRegression from 'ml-logistic-regression';
 import { DecisionTreeRegression } from 'ml-cart';
-import euclideanDistance from 'euclidean-distance';
 
 import randomColor from 'randomcolor';
 import * as api from '../helpers/api';
@@ -27,23 +26,25 @@ export const getClassificationData = async (type) => {
     classificationData[type] = dressClassData(data);
 };
 
-export const clustering = async (data, k = 7) => {
-    return new Promise((resolve, reject) => kmeans.clusterize(
-        data,
-        { k },
-        (err, result) => {
-            if (err) {
-                console.error(err);
-                reject(err);
-            } else {
-                resolve(result);
-            }
-        },
-    ));
+export const clustering = (k = 50) => {
+    const ans = kmeans(clusterData, k);
+
+    // console.log(JSON.stringify(ans, null, 2));
+
+    return ans.clusters.reduce((obj, clusterIndex, i) => {
+        const prevObj = obj[clusterIndex] ? obj[clusterIndex] : {};
+        return {
+            ...obj,
+            [clusterIndex]: [
+                ...prevObj,
+                clusterData[i],
+            ],
+        };
+    }, { centroids: ans.centroids });
 };
 
 export const getKMean = async () => {
-    const maxK = 50;
+    const maxK = 10;
     const color = randomColor();
     const data = {
         backgroundColor: color,
@@ -52,20 +53,11 @@ export const getKMean = async () => {
     };
 
     for (let k = 2; k <= maxK; k += 1) {
-        const clusters = await clustering(clusterData, k);
+        const clusters = await clustering(k);
+        // console.log(clusters.centroids);
 
-        // calculate average distance of all datapoints to its centroid for entire cluster
-        const avgDistance = clusters.reduce((sum, { centroid, cluster }) => {
-            // calculate total distance of all datapoints to its centroid
-            const totalDistance = cluster.reduce((sum2, datapoint) => {
-                return sum2 + Math.abs(euclideanDistance(datapoint, centroid)) ** 2;
-            }, 0);
-
-            return sum + totalDistance / cluster.length;
-        }, 0);
-
-        // average error per k (groups)
-        const sse = avgDistance / k;
+        const sse = clusters.centroids.reduce((sum, centroid) => (sum += centroid.error), 0);
+        // console.log(sse);
 
         data.points.push({
             x: k,
@@ -89,19 +81,20 @@ export const dressClassData = (array) => {
     }, { x: [], y: [] });
 };
 
-export const clusteringTraining = async () => {
-    return clustering(clusterData)
-        .then((clusters) => {
-            return clusters.map((clusterData, i) => {
-                const color = randomColor();
-                return {
-                    label: `Cluster ${i + 1}`,
-                    backgroundColor: color,
-                    borderColor: color,
-                    data: clusterData.cluster.map(([x, y]) => ({ x, y })), // return array of objects with x and y data
-                };
-            });
-        });
+export const clusteringTraining = () => {
+    const clusters = clustering();
+
+    return Object.keys(clusters).map((clusterIndex) => {
+        if (isNaN(clusterIndex)) return null;
+
+        const color = randomColor();
+        return {
+            label: `Cluster ${Number(clusterIndex) + 1}`,
+            backgroundColor: color,
+            borderColor: color,
+            data: clusters[clusterIndex].map(([x, y]) => ({ x, y })), // return array of objects with x and y data
+        };
+    }).filter(Boolean);
 };
 
 export const logisticRegression = async () => {
@@ -168,8 +161,8 @@ if (process.env.NODE_ENV !== 'test') {
         next();
     });
 
-    app.get('/clustering/training', async (req, res) => {
-        const data = await clusteringTraining();
+    app.get('/clustering/training', (req, res) => {
+        const data = clusteringTraining();
         res.status(200).json(data);
     });
 
@@ -193,6 +186,9 @@ if (process.env.NODE_ENV !== 'test') {
     // open connection
     app.listen(app.get('port'), async () => {
         await getClusterData();
+
+        await clustering();
+        await getKMean();
 
         await getClassificationData('training');
         await getClassificationData('test');

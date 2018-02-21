@@ -6,10 +6,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clusteringData = await api.get({ path: 'clustering/training' });
     const elbowData = await api.get({ path: 'clustering/training/elbow' });
 
-    // debug
-    window.clusteringData = clusteringData;
-    window.elbowData = elbowData;
-
     Chart.defaults.global.maintainAspectRatio = false;
     Chart.defaults.global.responsive = false;
 
