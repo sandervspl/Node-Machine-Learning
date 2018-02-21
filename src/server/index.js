@@ -125,7 +125,11 @@ export const logisticRegression = async () => {
 
     console.timeEnd('Logistic Regression');
 
-    await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
+    await api.post({
+        path: 'classification/test',
+        server: true,
+        body: JSON.stringify(_.flatten(prediction)),
+    })
         .then(res => console.log('Score:', res));
 };
 
@@ -140,7 +144,11 @@ export const decisionTree = async () => {
 
     console.timeEnd('Decision tree');
 
-    await api.post({ path: 'classification/test', server: true, body: JSON.stringify(_.flatten(prediction)) })
+    await api.post({
+        path: 'classification/test',
+        server: true,
+        body: JSON.stringify(_.flatten(prediction)),
+    })
         .then(res => console.log('Score:', res));
 };
 
